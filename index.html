@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" href="data:," />
+    <title>本地经营看板</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="shell">
+        <div class="brand">本地经营看板</div>
+        <nav id="board-nav" aria-label="看板目录" hidden>
+          <a aria-current="location" href="#overview">经营总览</a
+          ><a href="#products">商品排行</a><a href="#definitions">指标口径</a>
+        </nav>
+        <button type="button" class="change-file" id="change-report" hidden>
+          更换报表
+        </button>
+      </div>
+    </header>
+    <main class="shell">
+      <input
+        type="file"
+        id="report-file"
+        accept=".json,.html,.htm,application/json,text/html"
+        hidden
+      />
+      <section class="welcome" id="welcome" aria-labelledby="welcome-title">
+        <div class="welcome-line" aria-hidden="true"></div>
+        <h1 id="welcome-title">打开本地经营报表</h1>
+        <p>
+          选择经营助手导出的整份看板 HTML 或报表
+          JSON，查看店铺指标、商品排名和每日趋势。
+        </p>
+        <button class="btn strong" type="button" id="open-report">
+          选择报表文件
+        </button>
+        <p class="privacy-note">
+          文件由此设备读取。页面仅在当前会话中显示报表。
+        </p>
+      </section>
+      <p
+        class="load-status"
+        id="load-status"
+        role="status"
+        aria-live="polite"
+      ></p>
+      <div id="report-content" hidden>
+        <section id="overview" aria-labelledby="page-heading">
+          <div class="pagehead">
+            <div>
+              <h1 id="page-heading" tabindex="-1">经营总览</h1>
+              <p class="meta" id="store-meta"></p>
+            </div>
+            <button type="button" class="btn strong" id="shop-download">
+              导出本期 Excel
+            </button>
+          </div>
+          <div class="filters">
+            <div class="srow">
+              <span class="ctrl-label">店铺指标期间</span>
+              <div
+                class="seg"
+                id="shop-range"
+                role="group"
+                aria-label="店铺指标期间"
+              >
+                <button type="button" data-value="1" aria-pressed="false">
+                  最近完整日</button
+                ><button type="button" data-value="7" aria-pressed="true">
+                  近 7 天</button
+                ><button type="button" data-value="30" aria-pressed="false">
+                  近 30 天
+                </button>
+              </div>
+            </div>
+            <output id="shop-dates"></output>
+          </div>
+          <div class="kpis" id="kpis" aria-live="polite"></div>
+          <div class="context" id="shop-context"></div>
+        </section>
+        <section aria-labelledby="chart-heading">
+          <div class="sectionhead">
+            <div class="srow">
+              <h2 id="chart-heading">逐日经营走势</h2>
+              <span class="meta" id="chart-dates"></span>
+            </div>
+            <div
+              id="chart-range"
+              class="seg"
+              role="group"
+              aria-label="逐日趋势时间"
+            >
+              <button type="button" data-value="7" aria-pressed="false">
+                7 日</button
+              ><button type="button" data-value="14" aria-pressed="true">
+                14 日</button
+              ><button type="button" data-value="30" aria-pressed="false">
+                30 日
+              </button>
+            </div>
+          </div>
+          <div class="charts">
+            <article class="card">
+              <div class="card-head">
+                <h3>每日支付金额</h3>
+                <span class="meta">人民币 · 元</span>
+              </div>
+              <div class="chartbody">
+                <div class="plot" id="pay-plot"></div>
+              </div>
+            </article>
+            <article class="card">
+              <div class="card-head ringhead">
+                <div class="srow">
+                  <h3 id="mix-title">商品支付构成</h3>
+                  <span id="mix-dates" class="meta"></span>
+                </div>
+                <div
+                  class="seg"
+                  id="mix-range"
+                  role="group"
+                  aria-label="支付构成维度"
+                >
+                  <button
+                    type="button"
+                    aria-pressed="true"
+                    data-value="products"
+                  >
+                    商品</button
+                  ><button
+                    type="button"
+                    aria-pressed="false"
+                    data-value="platforms"
+                  >
+                    销售平台
+                  </button>
+                </div>
+              </div>
+              <div class="ringbody" id="ring"></div>
+              <div class="sourcehint" id="ring-source"></div>
+            </article>
+            <article class="card chartfull">
+              <div class="card-head">
+                <h3>访客数与支付转化率</h3>
+                <div class="legend">
+                  <span><i></i>访客数 · 左轴</span
+                  ><span><i class="green"></i>支付转化率 · 右轴</span>
+                </div>
+              </div>
+              <div class="chartbody">
+                <div class="plot" id="traffic-plot"></div>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section
+          class="card products"
+          id="products"
+          aria-labelledby="product-heading"
+        >
+          <div class="card-head">
+            <h2 id="product-heading">商品排行</h2>
+            <span class="meta" id="prod-period"></span>
+          </div>
+          <div class="pcontrols">
+            <label
+              >商品报表
+              <select id="prod-range"></select></label
+            ><input
+              id="search"
+              type="search"
+              placeholder="搜索商品名或 ID"
+              aria-label="搜索商品名或 ID"
+            />
+            <div class="spacer"></div>
+            <details class="columns" id="column-menu">
+              <summary>列设置</summary>
+              <div class="menu" id="columns"></div>
+            </details>
+            <button type="button" class="btn" id="product-export">
+              导出筛选 CSV
+            </button>
+          </div>
+          <div class="tablewrap">
+            <table aria-label="商品经营排行">
+              <thead>
+                <tr id="product-head"></tr>
+              </thead>
+              <tbody id="product-rows"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <span class="meta" id="count"></span
+            ><button class="btn" type="button" id="prev">上一页</button
+            ><span
+              class="meta"
+              style="margin: 0"
+              id="page"
+              aria-live="polite"
+            ></span
+            ><button class="btn" type="button" id="next">下一页</button>
+          </div>
+        </section>
+        <details class="notearea" id="definitions">
+          <summary>数据来源与指标口径</summary>
+          <p>
+            支付子订单数、客单价和支付转化率取自所选店铺报表。退款金额按退款完结时间归属，金额退款率沿用平台公布值。平台未提供的指标显示为「—」。
+          </p>
+          <p>
+            店铺近 7 天和近 30
+            天采用生意参谋自定义区间。店铺区间访客可能包含多日重复访问，同期比较应采用相同的统计口径。商品近
+            7／30 天采用官方商品整期报表。
+          </p>
+          <p>
+            商品报表独立标注截止日。排行按所选指标排序，同分按商品 ID
+            升序。点商品或「七日趋势」可看截至该报表末日的七份商品日报。某天未收录该商品时，图线断开。
+          </p>
+        </details>
+        <footer class="sourcefoot"><span id="report-origin"></span></footer>
+      </div>
+    </main>
+    <dialog id="drawer" aria-labelledby="drawer-label">
+      <div class="drawer-top">
+        <h2 id="drawer-label">商品七日趋势</h2>
+        <button class="btn" id="close-drawer" type="button">关闭</button>
+      </div>
+      <div class="drawer-content">
+        <h3 id="drawer-title"></h3>
+        <p class="meta" id="drawer-id"></p>
+        <div class="drawer-stats" id="drawer-stats"></div>
+        <h4>每日访客数</h4>
+        <div class="plot" id="item-plot"></div>
+        <h4>近七日明细</h4>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>访客数</th>
+                <th>支付买家数</th>
+                <th>支付金额</th>
+                <th>支付转化率</th>
+              </tr>
+            </thead>
+            <tbody id="drawer-rows"></tbody>
+          </table>
+        </div>
+        <p class="dim" id="drawer-missing"></p>
+      </div>
+    </dialog>
+    <div class="tip" id="tooltip" hidden></div>
+    <noscript
+      >请在浏览器中启用 JavaScript 查看经营指标、图表与商品明细。</noscript
+    >
+    <script defer src="./board.js"></script>
+    <script defer src="./local-report.js"></script>
+  </body>
+</html>
